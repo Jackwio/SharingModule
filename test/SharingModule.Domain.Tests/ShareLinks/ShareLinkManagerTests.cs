@@ -112,7 +112,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
     [Fact]
     public async Task Should_Record_Access_To_ShareLink()
     {
-        ShareLink updatedLink = null!;
+        ShareLink? updatedLink = null;
         
         await WithUnitOfWorkAsync(async () =>
         {
@@ -139,6 +139,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
             updatedLink = shareLinks[0];
         });
         
+        updatedLink.ShouldNotBeNull();
         updatedLink.AccessLogs.Count.ShouldBe(1);
         updatedLink.AccessLogs.ShouldContain(log => 
             log.AccessedBy == "test-user" && 
@@ -149,7 +150,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
     [Fact]
     public async Task Should_Revoke_SingleUse_ShareLink_After_First_Access()
     {
-        ShareLink updatedLink = null!;
+        ShareLink? updatedLink = null;
         
         await WithUnitOfWorkAsync(async () =>
         {
@@ -175,6 +176,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
             updatedLink = shareLinks[0];
         });
         
+        updatedLink.ShouldNotBeNull();
         updatedLink.IsRevoked.ShouldBeTrue();
         updatedLink.RevokedAt.ShouldNotBeNull();
     }
