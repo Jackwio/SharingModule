@@ -1,0 +1,35 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SharingModule.Application.Contracts/SharingModule.Application.Contracts.csproj" />
+    <Project Path="src/SharingModule.Application/SharingModule.Application.csproj" />
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <Project Path="src/SharingModule.DbMigrator/SharingModule.DbMigrator.csproj" />
+    <Project Path="src/SharingModule.Domain.Shared/SharingModule.Domain.Shared.csproj" />
+    <Project Path="src/SharingModule.Domain/SharingModule.Domain.csproj" />
+    <Project Path="src/SharingModule.EntityFrameworkCore/SharingModule.EntityFrameworkCore.csproj" />
+    <Project Path="src/SharingModule.HttpApi.Client/SharingModule.HttpApi.Client.csproj" />
+    
+    <Project Path="src/SharingModule.HttpApi.Host/SharingModule.HttpApi.Host.csproj" />
+    <Project Path="src/SharingModule.HttpApi/SharingModule.HttpApi.csproj" />
+    
+    
+    
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/SharingModule.Application.Tests/SharingModule.Application.Tests.csproj" />
+    <Project Path="test/SharingModule.Domain.Tests/SharingModule.Domain.Tests.csproj" />
+    <Project Path="test/SharingModule.EntityFrameworkCore.Tests/SharingModule.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="test/SharingModule.HttpApi.Client.ConsoleTestApp/SharingModule.HttpApi.Client.ConsoleTestApp.csproj" />
+    
+    <Project Path="test/SharingModule.TestBase/SharingModule.TestBase.csproj" />
+    
+  </Folder>
+</Solution>

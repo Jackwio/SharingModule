@@ -1,0 +1,1 @@
+Help me to generate or update one API spec ${file} including all necessary information about front-end and back-end integration, alse include base url of backend.
