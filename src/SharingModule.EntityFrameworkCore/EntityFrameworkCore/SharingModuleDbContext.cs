@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SharingModule.Models;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -24,6 +25,9 @@ public class SharingModuleDbContext :
     ITenantManagementDbContext
 {
     /* Add DbSet properties for your Aggregate Roots / Entities here. */
+    
+    public DbSet<ShareLink> ShareLinks { get; set; }
+    public DbSet<ShareLinkAccessLog> ShareLinkAccessLogs { get; set; }
 
     #region Entities from the modules
 
@@ -76,11 +80,6 @@ public class SharingModuleDbContext :
 
         /* Configure your own tables/entities inside here */
 
-        //builder.Entity<YourEntity>(b =>
-        //{
-        //    b.ToTable(SharingModuleConsts.DbTablePrefix + "YourEntities", SharingModuleConsts.DbSchema);
-        //    b.ConfigureByConvention(); //auto configure for the base class props
-        //    //...
-        //});
+        builder.ConfigureSharingModule();
     }
 }

@@ -3,4 +3,8 @@
 public static class SharingModuleDomainErrorCodes
 {
     /* You can add your business exception error codes here, as constants */
+    
+    public const string ShareLinkNotFound = "SharingModule:ShareLink:001";
+    public const string ShareLinkRevoked = "SharingModule:ShareLink:002";
+    public const string ShareLinkExpired = "SharingModule:ShareLink:003";
 }
