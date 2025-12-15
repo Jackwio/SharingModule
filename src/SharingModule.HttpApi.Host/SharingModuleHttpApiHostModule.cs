@@ -87,17 +87,18 @@ public class SharingModuleHttpApiHostModule : AbpModule
             // Process X-Forwarded-For and X-Forwarded-Proto headers
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
 
-            // Clear default known networks and proxies to trust all proxies
-            // In production, you should configure specific trusted proxies/networks
-#pragma warning disable ASPDEPR005
-            options.KnownNetworks.Clear();
-#pragma warning restore ASPDEPR005
-            options.KnownProxies.Clear();
-
-            // Read trusted proxy configuration from appsettings (optional)
+            // Read trusted proxy configuration from appsettings
             var trustedProxies = configuration.GetSection("ForwardedHeaders:TrustedProxies").Get<string[]>();
-            if (trustedProxies != null)
+            
+            if (trustedProxies != null && trustedProxies.Length > 0)
             {
+                // Clear defaults only if specific proxies are configured
+#pragma warning disable ASPDEPR005
+                options.KnownNetworks.Clear();
+#pragma warning restore ASPDEPR005
+                options.KnownProxies.Clear();
+                
+                // Add configured trusted proxies
                 foreach (var proxy in trustedProxies)
                 {
                     if (IPAddress.TryParse(proxy, out var ipAddress))
@@ -105,6 +106,20 @@ public class SharingModuleHttpApiHostModule : AbpModule
                         options.KnownProxies.Add(ipAddress);
                     }
                 }
+            }
+            else
+            {
+                // For development/local environments without configured proxies,
+                // trust localhost and private networks
+                // WARNING: In production, always configure specific trusted proxies
+#pragma warning disable ASPDEPR005
+                options.KnownNetworks.Clear();
+#pragma warning restore ASPDEPR005
+                options.KnownProxies.Clear();
+                
+                // Add common local/private network proxies for development
+                options.KnownProxies.Add(IPAddress.Loopback); // 127.0.0.1
+                options.KnownProxies.Add(IPAddress.IPv6Loopback); // ::1
             }
         });
     }
