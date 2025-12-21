@@ -2,7 +2,12 @@
 
 ## API Specification
 
-This repository includes an OpenAPI 3.0 specification file (`openapi.json`) that describes all available API endpoints for the SharingModule application.
+This repository includes OpenAPI 3.0 specification files that describe all available API endpoints for the SharingModule application:
+
+- **JSON format:** [`openapi.json`](openapi.json)
+- **YAML format:** [`openapi.yaml`](openapi.yaml)
+
+Both files contain the same specification in different formats. Use whichever format you prefer for your tooling.
 
 ## Base URL
 
@@ -60,7 +65,7 @@ You can import the `openapi.json` file into popular API development tools:
 #### Postman
 1. Open Postman
 2. Click "Import" button
-3. Select the `openapi.json` file
+3. Select the `openapi.json` or `openapi.yaml` file
 4. Postman will create a collection with all endpoints
 
 #### Insomnia
