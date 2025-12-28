@@ -1,5 +1,6 @@
 ﻿using Volo.Abp.Account;
 using Volo.Abp.Mapperly;
+using Volo.Abp.AutoMapper;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -18,12 +19,17 @@ namespace SharingModule;
     typeof(AbpPermissionManagementApplicationModule),
     typeof(AbpTenantManagementApplicationModule),
     typeof(AbpFeatureManagementApplicationModule),
-    typeof(AbpSettingManagementApplicationModule)
+    typeof(AbpSettingManagementApplicationModule),
+    typeof(AbpAutoMapperModule)
     )]
 public class SharingModuleApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.AddMapperlyObjectMapper<SharingModuleApplicationModule>();
+        // Register AutoMapper profile for ABP's AutoMapper integration
+        Configure<AbpAutoMapperOptions>(options =>
+        {
+            options.AddProfile<SharingModuleApplicationAutoMapperProfile>(validate: true);
+        });
     }
 }

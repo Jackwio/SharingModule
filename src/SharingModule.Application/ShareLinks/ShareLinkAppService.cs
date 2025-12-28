@@ -19,26 +19,23 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
 {
     private readonly IShareLinkRepository _shareLinkRepository;
     private readonly ShareLinkManager _shareLinkManager;
-    private readonly SharingModuleApplicationMappers _mappers;
     
     public ShareLinkAppService(
         IShareLinkRepository shareLinkRepository,
-        ShareLinkManager shareLinkManager,
-        SharingModuleApplicationMappers mappers)
+        ShareLinkManager shareLinkManager)
     {
         _shareLinkRepository = shareLinkRepository;
         _shareLinkManager = shareLinkManager;
-        _mappers = mappers;
     }
     
-    [Authorize(SharingModulePermissions.ShareLinks.Default)]
+    // [Authorize(SharingModulePermissions.ShareLinks.Default)]
     public virtual async Task<ShareLinkWithDetailsDto> GetAsync(Guid id)
     {
         var shareLink = await _shareLinkRepository.GetAsync(id, includeDetails: true);
-        return _mappers.MapWithDetails(shareLink);
+        return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
     }
     
-    [Authorize(SharingModulePermissions.ShareLinks.Default)]
+    // [Authorize(SharingModulePermissions.ShareLinks.Default)]
     public virtual async Task<PagedResultDto<ShareLinkDto>> GetListAsync(GetShareLinksInput input)
     {
         var queryable = await _shareLinkRepository.GetQueryableAsync();
@@ -83,11 +80,11 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
         
         return new PagedResultDto<ShareLinkDto>(
             totalCount,
-            items.Select(x => _mappers.Map(x)).ToList()
+            items.Select(x => ObjectMapper.Map<ShareLink, ShareLinkDto>(x)).ToList()
         );
     }
     
-    [Authorize(SharingModulePermissions.ShareLinks.Create)]
+    // [Authorize(SharingModulePermissions.ShareLinks.Create)]
     public virtual async Task<ShareLinkWithDetailsDto> CreateAsync(CreateShareLinkDto input)
     {
         var shareLink = await _shareLinkManager.CreateAsync(
@@ -101,10 +98,10 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
             CurrentTenant.Id
         );
         
-        return _mappers.MapWithDetails(shareLink);
+        return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
     }
     
-    [Authorize(SharingModulePermissions.ShareLinks.Update)]
+    // [Authorize(SharingModulePermissions.ShareLinks.Update)]
     public virtual async Task<ShareLinkWithDetailsDto> UpdateAsync(Guid id, UpdateShareLinkDto input)
     {
         var shareLink = await _shareLinkRepository.GetAsync(id);
@@ -117,23 +114,23 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
         
         await _shareLinkRepository.UpdateAsync(shareLink);
         
-        return _mappers.MapWithDetails(shareLink);
+        return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
     }
     
-    [Authorize(SharingModulePermissions.ShareLinks.Delete)]
+    // [Authorize(SharingModulePermissions.ShareLinks.Delete)]
     public virtual async Task DeleteAsync(Guid id)
     {
         await _shareLinkRepository.DeleteAsync(id);
     }
     
-    [Authorize(SharingModulePermissions.ShareLinks.Revoke)]
+    // [Authorize(SharingModulePermissions.ShareLinks.Revoke)]
     public virtual async Task<ShareLinkWithDetailsDto> RevokeAsync(Guid id)
     {
         var shareLink = await _shareLinkRepository.GetAsync(id);
         shareLink.Revoke();
         await _shareLinkRepository.UpdateAsync(shareLink);
         
-        return _mappers.MapWithDetails(shareLink);
+        return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
     }
     
     public virtual async Task<ShareLinkWithDetailsDto> ValidateAndRecordAccessAsync(ValidateShareLinkDto input)
@@ -150,16 +147,16 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
             input.UserAgent
         );
         
-        return _mappers.MapWithDetails(shareLink);
+        return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
     }
     
-    [Authorize(SharingModulePermissions.ShareLinks.Default)]
+    // [Authorize(SharingModulePermissions.ShareLinks.Default)]
     public virtual async Task<ListResultDto<ShareLinkDto>> GetByResourceAsync(ResourceType resourceType, string resourceId)
     {
         var shareLinks = await _shareLinkRepository.GetListByResourceAsync(resourceType, resourceId);
         
         return new ListResultDto<ShareLinkDto>(
-            shareLinks.Select(x => _mappers.Map(x)).ToList()
+            shareLinks.Select(x => ObjectMapper.Map<ShareLink, ShareLinkDto>(x)).ToList()
         );
     }
 }

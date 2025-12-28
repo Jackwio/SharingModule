@@ -20,6 +20,7 @@
     <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="10.0.1" />
     <PackageReference Include="Volo.Abp.FeatureManagement.Application" Version="10.0.1" />
     <PackageReference Include="Volo.Abp.SettingManagement.Application" Version="10.0.1" />
+    <PackageReference Include="Volo.Abp.AutoMapper" Version="10.0.1" />
   </ItemGroup>
 
 </Project>
