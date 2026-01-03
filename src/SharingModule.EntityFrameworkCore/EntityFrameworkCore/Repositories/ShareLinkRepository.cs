@@ -52,7 +52,7 @@ public class ShareLinkRepository : EfCoreRepository<SharingModuleDbContext, Shar
         CancellationToken cancellationToken = default)
     {
         var dbSet = await GetDbSetAsync();
-        var now = DateTime.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         
         return await dbSet
             .IncludeDetails(includeDetails)

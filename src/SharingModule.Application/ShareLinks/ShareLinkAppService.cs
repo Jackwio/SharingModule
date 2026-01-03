@@ -38,7 +38,7 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
     // [Authorize(SharingModulePermissions.ShareLinks.Default)]
     public virtual async Task<PagedResultDto<ShareLinkDto>> GetListAsync(GetShareLinksInput input)
     {
-        var queryable = await _shareLinkRepository.GetQueryableAsync();
+        var queryable = await _shareLinkRepository.WithDetailsAsync();
         
         // Apply filters
         if (input.ResourceType.HasValue)
@@ -58,7 +58,7 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
         
         if (!input.IncludeExpired.GetValueOrDefault())
         {
-            var now = DateTime.UtcNow;
+            var now = DateTimeOffset.UtcNow;
             queryable = queryable.Where(x => x.ExpiresAt == null || x.ExpiresAt > now);
         }
         
@@ -135,18 +135,16 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
     
     public virtual async Task<ShareLinkWithDetailsDto> ValidateAndRecordAccessAsync(ValidateShareLinkDto input)
     {
-        var shareLink = await _shareLinkManager.ValidateAndGetAsync(input.Token);
-        
-        var accessedBy = input.AccessedBy ?? (input.IsAnonymous ? "Anonymous" : CurrentUser.Id?.ToString() ?? "Unknown");
-        
-        await _shareLinkManager.RecordAccessAsync(
-            shareLink,
-            accessedBy,
+        // Use a single manager call that validates and records access atomically and enforces non-anonymous rules
+        var shareLink = await _shareLinkManager.ValidateAndRecordAccessByTokenAsync(
+            input.Token,
+            CurrentUser.Id,
             input.IsAnonymous,
+            input.AccessedBy,
             input.IpAddress,
             input.UserAgent
         );
-        
+
         return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
     }
     

@@ -30,7 +30,7 @@ public class ShareLinkManager : DomainService
         bool isReadOnly = true,
         bool allowComments = false,
         bool allowAnonymous = true,
-        DateTime? expiresAt = null,
+        DateTimeOffset? expiresAt = null,
         Guid? tenantId = null)
     {
         var token = GenerateUniqueToken();
@@ -80,7 +80,7 @@ public class ShareLinkManager : DomainService
                     .WithData("Token", token);
             }
             
-            if (shareLink.ExpiresAt.HasValue && shareLink.ExpiresAt.Value < DateTime.UtcNow)
+            if (shareLink.ExpiresAt.HasValue && shareLink.ExpiresAt.Value < DateTimeOffset.UtcNow)
             {
                 throw new BusinessException(SharingModuleDomainErrorCodes.ShareLinkExpired)
                     .WithData("Token", token)
@@ -96,12 +96,18 @@ public class ShareLinkManager : DomainService
     /// </summary>
     public virtual async Task<ShareLink> RecordAccessAsync(
         ShareLink shareLink,
-        string accessedBy,
+        string? accessedBy,
         bool isAnonymous,
-        string ipAddress = null,
-        string userAgent = null)
+        string? ipAddress = null,
+        string? userAgent = null)
     {
         Check.NotNull(shareLink, nameof(shareLink));
+
+        // Prevent recording access to a revoked link
+        if (shareLink.IsRevoked)
+        {
+            throw new BusinessException(SharingModuleDomainErrorCodes.ShareLinkRevoked);
+        }
         
         var accessLog = new ShareLinkAccessLog(
             GuidGenerator.Create(),
@@ -124,6 +130,98 @@ public class ShareLinkManager : DomainService
         
         await _shareLinkRepository.UpdateAsync(shareLink);
         
+        return shareLink;
+    }
+
+    /// <summary>
+    /// Validate and record access by token atomically (includes non-anonymous checks)
+    /// </summary>
+    public virtual async Task<ShareLink> ValidateAndRecordAccessByTokenAsync(
+        string token,
+        Guid? currentUserId,
+        bool isAnonymous,
+        string? accessedBy = null,
+        string? ipAddress = null,
+        string? userAgent = null)
+    {
+        var shareLink = await _shareLinkRepository.FindByTokenAsync(token, includeDetails: true);
+
+        if (shareLink == null)
+        {
+            throw new BusinessException(SharingModuleDomainErrorCodes.ShareLinkNotFound)
+                .WithData("Token", token);
+        }
+
+        // Non-anonymous restrictions
+        if (!shareLink.AllowAnonymous)
+        {
+            if (isAnonymous)
+            {
+                throw new BusinessException(SharingModuleDomainErrorCodes.ShareLinkAnonymousNotAllowed)
+                    .WithData("Token", token);
+            }
+
+            if (!currentUserId.HasValue)
+            {
+                throw new BusinessException(SharingModuleDomainErrorCodes.ShareLinkRequiresAuthentication)
+                    .WithData("Token", token);
+            }
+        }
+
+        if (!shareLink.IsValid())
+        {
+            if (shareLink.IsRevoked)
+            {
+                throw new BusinessException(SharingModuleDomainErrorCodes.ShareLinkRevoked)
+                    .WithData("Token", token);
+            }
+
+            if (shareLink.ExpiresAt.HasValue && shareLink.ExpiresAt.Value < DateTimeOffset.UtcNow)
+            {
+                throw new BusinessException(SharingModuleDomainErrorCodes.ShareLinkExpired)
+                    .WithData("Token", token)
+                    .WithData("ExpiresAt", shareLink.ExpiresAt.Value);
+            }
+        }
+
+        var actualAccessedBy = accessedBy ?? (isAnonymous ? "Anonymous" : currentUserId?.ToString() ?? "Unknown");
+
+        var accessLog = new ShareLinkAccessLog(
+            GuidGenerator.Create(),
+            shareLink.Id,
+            DateTime.UtcNow,
+            actualAccessedBy,
+            isAnonymous,
+            ipAddress,
+            userAgent,
+            shareLink.TenantId
+        );
+
+        shareLink.AddAccessLog(accessLog);
+
+        if (shareLink.LinkType == ShareLinkType.SingleUse)
+        {
+            shareLink.Revoke();
+        }
+
+        try
+        {
+            await _shareLinkRepository.UpdateAsync(shareLink);
+        }
+        catch (Exception ex) // Could be a concurrency exception from EF provider
+        {
+            // Re-check link state and translate to a friendly business exception
+            var fresh = await _shareLinkRepository.FindByTokenAsync(token, includeDetails: true);
+            if (fresh == null || fresh.IsRevoked)
+            {
+                throw new BusinessException(SharingModuleDomainErrorCodes.ShareLinkAlreadyUsed)
+                    .WithData("Token", token)
+                    .WithData("InnerException", ex.Message);
+            }
+
+            throw;
+        }
+
         return shareLink;
     }
     

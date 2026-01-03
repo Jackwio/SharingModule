@@ -22,5 +22,5 @@ public class CreateShareLinkDto : ExtensibleObject
     
     public bool AllowAnonymous { get; set; } = true;
     
-    public DateTime? ExpiresAt { get; set; }
+    public DateTimeOffset? ExpiresAt { get; set; }
 }

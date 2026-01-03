@@ -51,9 +51,9 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual bool AllowAnonymous { get; private set; }
     
     /// <summary>
-    /// The expiration date/time of the share link (null = never expires)
+    /// The expiration date/time of the share link (null = never expires). Uses DateTimeOffset to preserve timezone/offset info.
     /// </summary>
-    public virtual DateTime? ExpiresAt { get; private set; }
+    public virtual DateTimeOffset? ExpiresAt { get; private set; }
     
     /// <summary>
     /// Whether the link has been revoked
@@ -64,6 +64,12 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// When the link was revoked
     /// </summary>
     public virtual DateTime? RevokedAt { get; private set; }
+
+    /// <summary>
+    /// Concurrency token (rowversion) to prevent race conditions on single-use links
+    /// </summary>
+    [System.ComponentModel.DataAnnotations.Timestamp]
+    public virtual byte[]? RowVersion { get; protected set; }
     
     /// <summary>
     /// Access logs for this share link
@@ -87,7 +93,7 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
         bool isReadOnly = true,
         bool allowComments = false,
         bool allowAnonymous = true,
-        DateTime? expiresAt = null,
+        DateTimeOffset? expiresAt = null,
         Guid? tenantId = null)
     {
         Id = id;
@@ -123,7 +129,7 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
         return this;
     }
     
-    public virtual ShareLink SetExpiresAt(DateTime? expiresAt)
+    public virtual ShareLink SetExpiresAt(DateTimeOffset? expiresAt)
     {
         ExpiresAt = expiresAt;
         return this;
@@ -143,7 +149,7 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
             return false;
         }
         
-        if (ExpiresAt.HasValue && ExpiresAt.Value < DateTime.UtcNow)
+        if (ExpiresAt.HasValue && ExpiresAt.Value < DateTimeOffset.UtcNow)
         {
             return false;
         }

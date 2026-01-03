@@ -13,7 +13,8 @@ public class ShareLinkDto : FullAuditedEntityDto<Guid>
     public bool IsReadOnly { get; set; }
     public bool AllowComments { get; set; }
     public bool AllowAnonymous { get; set; }
-    public DateTime? ExpiresAt { get; set; }
+    public DateTimeOffset? ExpiresAt { get; set; }
     public bool IsRevoked { get; set; }
     public DateTime? RevokedAt { get; set; }
+    public int AccessCount { get; set; }
 }

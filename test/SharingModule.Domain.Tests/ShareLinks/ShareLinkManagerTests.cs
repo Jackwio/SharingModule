@@ -99,7 +99,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
         var shareLink = await _shareLinkManager.CreateAsync(
             ResourceType.Page,
             "test-page-id",
-            expiresAt: DateTime.UtcNow.AddMinutes(-10) // Already expired
+            expiresAt: DateTimeOffset.UtcNow.AddMinutes(-10) // Already expired
         );
 
         // Act & Assert
@@ -107,6 +107,25 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
         {
             await _shareLinkManager.ValidateAndGetAsync(shareLink.Token);
         });
+    }
+
+    [Fact]
+    public async Task Should_Accept_ExpiresAt_With_Offset()
+    {
+        // Arrange
+        var expiresAt = DateTimeOffset.Now.AddHours(1); // local offset included
+        var shareLink = await _shareLinkManager.CreateAsync(
+            ResourceType.Page,
+            "test-page-id",
+            expiresAt: expiresAt
+        );
+
+        // Act
+        var validated = await _shareLinkManager.ValidateAndGetAsync(shareLink.Token);
+
+        // Assert
+        validated.ShouldNotBeNull();
+        validated.ExpiresAt.ShouldBe(expiresAt);
     }
 
     [Fact]
@@ -179,5 +198,49 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
         updatedLink.ShouldNotBeNull();
         updatedLink.IsRevoked.ShouldBeTrue();
         updatedLink.RevokedAt.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task Should_Reject_Anonymous_Access_When_Not_Allowed()
+    {
+        // Arrange
+        var shareLink = await _shareLinkManager.CreateAsync(
+            ResourceType.Page,
+            "test-page-id",
+            allowAnonymous: false
+        );
+
+        // Act & Assert
+        await Should.ThrowAsync<BusinessException>(async () =>
+        {
+            await _shareLinkManager.ValidateAndRecordAccessByTokenAsync(
+                shareLink.Token,
+                currentUserId: null,
+                isAnonymous: true,
+                accessedBy: null
+            );
+        });
+    }
+
+    [Fact]
+    public async Task Should_Require_Authenticated_User_When_Not_Anonymous()
+    {
+        // Arrange
+        var shareLink = await _shareLinkManager.CreateAsync(
+            ResourceType.Page,
+            "test-page-id",
+            allowAnonymous: false
+        );
+
+        // Act & Assert
+        await Should.ThrowAsync<BusinessException>(async () =>
+        {
+            await _shareLinkManager.ValidateAndRecordAccessByTokenAsync(
+                shareLink.Token,
+                currentUserId: null,
+                isAnonymous: false,
+                accessedBy: null
+            );
+        });
     }
 }
