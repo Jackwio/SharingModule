@@ -29,6 +29,7 @@ using Volo.Abp.Security.Claims;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
+using SharingModule.Middleware;
 
 namespace SharingModule;
 
@@ -203,6 +204,7 @@ public class SharingModuleHttpApiHostModule : AbpModule
         {
             app.UseMultiTenancy();
         }
+        app.UseWorkspaceContext();
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAuthorization();
