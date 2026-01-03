@@ -94,8 +94,7 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
             input.IsReadOnly,
             input.AllowComments,
             input.AllowAnonymous,
-            input.ExpiresAt,
-            CurrentTenant.Id
+            input.ExpiresAt
         );
         
         return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
