@@ -3,16 +3,19 @@ using System.Diagnostics.CodeAnalysis;
 using SharingModule.ShareLinks;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
-using Volo.Abp.MultiTenancy;
+
 
 namespace SharingModule.Models;
 
 /// <summary>
 /// Represents an access log entry for a share link
 /// </summary>
-public class ShareLinkAccessLog : Entity<Guid>, IMultiTenant
+public class ShareLinkAccessLog : Entity<Guid>, IMultiWorkspace
 {
-    public virtual Guid? TenantId { get; protected set; }
+    /// <summary>
+    /// The workspace ID that this entity belongs to
+    /// </summary>
+    public virtual Guid WorkspaceId { get; private set; }
     
     /// <summary>
     /// The share link ID
@@ -55,15 +58,16 @@ public class ShareLinkAccessLog : Entity<Guid>, IMultiTenant
         Guid shareLinkId,
         DateTime accessedAt,
         [NotNull] string accessedBy,
+        Guid workspaceId,
         bool isAnonymous,
         string ipAddress = null,
-        string userAgent = null,
-        Guid? tenantId = null)
+        string userAgent = null)
     {
         Id = id;
         ShareLinkId = shareLinkId;
         AccessedAt = accessedAt;
         AccessedBy = Check.NotNullOrWhiteSpace(accessedBy, nameof(accessedBy), ShareLinkConsts.MaxAccessedByLength);
+        WorkspaceId = workspaceId;
         IsAnonymous = isAnonymous;
         IpAddress = ipAddress?.Length > ShareLinkConsts.MaxIpAddressLength 
             ? ipAddress.Substring(0, ShareLinkConsts.MaxIpAddressLength) 
@@ -71,6 +75,5 @@ public class ShareLinkAccessLog : Entity<Guid>, IMultiTenant
         UserAgent = userAgent?.Length > ShareLinkConsts.MaxUserAgentLength
             ? userAgent.Substring(0, ShareLinkConsts.MaxUserAgentLength)
             : userAgent;
-        TenantId = tenantId;
     }
 }

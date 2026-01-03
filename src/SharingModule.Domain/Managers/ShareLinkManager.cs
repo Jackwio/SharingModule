@@ -1,6 +1,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using SharingModule.Data;
 using SharingModule.Models;
 using SharingModule.ShareLinks;
 using Volo.Abp;
@@ -14,10 +15,14 @@ namespace SharingModule.Managers;
 public class ShareLinkManager : DomainService
 {
     private readonly IShareLinkRepository _shareLinkRepository;
+    private readonly ICurrentWorkspace _currentWorkspace;
     
-    public ShareLinkManager(IShareLinkRepository shareLinkRepository)
+    public ShareLinkManager(
+        IShareLinkRepository shareLinkRepository,
+        ICurrentWorkspace currentWorkspace)
     {
         _shareLinkRepository = shareLinkRepository;
+        _currentWorkspace = currentWorkspace;
     }
     
     /// <summary>
@@ -30,9 +35,10 @@ public class ShareLinkManager : DomainService
         bool isReadOnly = true,
         bool allowComments = false,
         bool allowAnonymous = true,
-        DateTimeOffset? expiresAt = null,
-        Guid? tenantId = null)
+        DateTimeOffset? expiresAt = null)
     {
+        var workspaceId = _currentWorkspace.Id ?? throw new BusinessException("Workspace ID is required");
+        
         var token = GenerateUniqueToken();
         
         // Ensure token is unique
@@ -48,12 +54,12 @@ public class ShareLinkManager : DomainService
             token,
             resourceType,
             resourceId,
+            workspaceId,
             linkType,
             isReadOnly,
             allowComments,
             allowAnonymous,
-            expiresAt,
-            tenantId
+            expiresAt
         );
         
         return await _shareLinkRepository.InsertAsync(shareLink);
@@ -114,10 +120,10 @@ public class ShareLinkManager : DomainService
             shareLink.Id,
             DateTime.UtcNow,
             accessedBy,
+            shareLink.WorkspaceId,
             isAnonymous,
             ipAddress,
-            userAgent,
-            shareLink.TenantId
+            userAgent
         );
         
         shareLink.AddAccessLog(accessLog);
@@ -191,10 +197,10 @@ public class ShareLinkManager : DomainService
             shareLink.Id,
             DateTime.UtcNow,
             actualAccessedBy,
+            shareLink.WorkspaceId,
             isAnonymous,
             ipAddress,
-            userAgent,
-            shareLink.TenantId
+            userAgent
         );
 
         shareLink.AddAccessLog(accessLog);

@@ -4,16 +4,19 @@ using System.Diagnostics.CodeAnalysis;
 using SharingModule.ShareLinks;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.MultiTenancy;
+
 
 namespace SharingModule.Models;
 
 /// <summary>
 /// Represents a share link for a resource
 /// </summary>
-public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
+public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiWorkspace
 {
-    public virtual Guid? TenantId { get; protected set; }
+    /// <summary>
+    /// The workspace ID that this entity belongs to
+    /// </summary>
+    public virtual Guid WorkspaceId { get; private set; }
     
     /// <summary>
     /// The unique token for accessing the shared resource
@@ -89,24 +92,24 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
         [NotNull] string token,
         ResourceType resourceType,
         [NotNull] string resourceId,
+        Guid workspaceId,
         ShareLinkType linkType = ShareLinkType.MultipleUse,
         bool isReadOnly = true,
         bool allowComments = false,
         bool allowAnonymous = true,
-        DateTimeOffset? expiresAt = null,
-        Guid? tenantId = null)
+        DateTimeOffset? expiresAt = null)
     {
         Id = id;
         Token = Check.NotNullOrWhiteSpace(token, nameof(token), ShareLinkConsts.MaxTokenLength);
         ResourceType = resourceType;
         ResourceId = Check.NotNullOrWhiteSpace(resourceId, nameof(resourceId), ShareLinkConsts.MaxResourceIdLength);
+        WorkspaceId = workspaceId;
         LinkType = linkType;
         IsReadOnly = isReadOnly;
         AllowComments = allowComments;
         AllowAnonymous = allowAnonymous;
         ExpiresAt = expiresAt;
         IsRevoked = false;
-        TenantId = tenantId;
         
         AccessLogs = new List<ShareLinkAccessLog>();
     }

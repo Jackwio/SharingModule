@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
+using SharingModule.Data;
 using SharingModule.Models;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -81,5 +83,9 @@ public class SharingModuleDbContext :
         /* Configure your own tables/entities inside here */
 
         builder.ConfigureSharingModule();
+        
+        // Configure workspace filtering
+        builder.Entity<ShareLink>().HasQueryFilter(e => e.WorkspaceId == LazyServiceProvider.LazyGetRequiredService<ICurrentWorkspace>().Id);
+        builder.Entity<ShareLinkAccessLog>().HasQueryFilter(e => e.WorkspaceId == LazyServiceProvider.LazyGetRequiredService<ICurrentWorkspace>().Id);
     }
 }

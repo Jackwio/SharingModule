@@ -19,6 +19,9 @@ public static class SharingModuleDbContextModelCreatingExtensions
             b.ConfigureByConvention();
             
             // Properties
+            b.Property(x => x.WorkspaceId)
+                .IsRequired();
+                
             b.Property(x => x.Token)
                 .IsRequired()
                 .HasMaxLength(ShareLinkConsts.MaxTokenLength);
@@ -50,6 +53,8 @@ public static class SharingModuleDbContextModelCreatingExtensions
             b.Property(x => x.RevokedAt);
             
             // Indexes
+            b.HasIndex(x => x.WorkspaceId);
+            
             b.HasIndex(x => x.Token)
                 .IsUnique();
             
@@ -72,6 +77,9 @@ public static class SharingModuleDbContextModelCreatingExtensions
             b.ConfigureByConvention();
             
             // Properties
+            b.Property(x => x.WorkspaceId)
+                .IsRequired();
+                
             b.Property(x => x.ShareLinkId)
                 .IsRequired();
             
@@ -92,6 +100,8 @@ public static class SharingModuleDbContextModelCreatingExtensions
                 .HasMaxLength(ShareLinkConsts.MaxUserAgentLength);
             
             // Indexes
+            b.HasIndex(x => x.WorkspaceId);
+            
             b.HasIndex(x => x.ShareLinkId);
             
             b.HasIndex(x => x.AccessedAt);
