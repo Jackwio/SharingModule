@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using SharingModule.Managers;
 using SharingModule.Models;
 using SharingModule.Permissions;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -41,16 +42,6 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
         var queryable = await _shareLinkRepository.WithDetailsAsync();
         
         // Apply filters
-        if (input.ResourceType.HasValue)
-        {
-            queryable = queryable.Where(x => x.ResourceType == input.ResourceType.Value);
-        }
-        
-        if (!string.IsNullOrWhiteSpace(input.ResourceId))
-        {
-            queryable = queryable.Where(x => x.ResourceId == input.ResourceId);
-        }
-        
         if (input.IsRevoked.HasValue)
         {
             queryable = queryable.Where(x => x.IsRevoked == input.IsRevoked.Value);
@@ -88,8 +79,6 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
     public virtual async Task<ShareLinkWithDetailsDto> CreateAsync(CreateShareLinkDto input)
     {
         var shareLink = await _shareLinkManager.CreateAsync(
-            input.ResourceType,
-            input.ResourceId,
             input.LinkType,
             input.IsReadOnly,
             input.AllowComments,
@@ -145,15 +134,5 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
         );
 
         return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
-    }
-    
-    // [Authorize(SharingModulePermissions.ShareLinks.Default)]
-    public virtual async Task<ListResultDto<ShareLinkDto>> GetByResourceAsync(ResourceType resourceType, string resourceId)
-    {
-        var shareLinks = await _shareLinkRepository.GetListByResourceAsync(resourceType, resourceId);
-        
-        return new ListResultDto<ShareLinkDto>(
-            shareLinks.Select(x => ObjectMapper.Map<ShareLink, ShareLinkDto>(x)).ToList()
-        );
     }
 }

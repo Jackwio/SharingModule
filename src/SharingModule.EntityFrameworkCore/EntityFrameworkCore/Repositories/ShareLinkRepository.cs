@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SharingModule.Models;
-using SharingModule.ShareLinks;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -31,20 +30,6 @@ public class ShareLinkRepository : EfCoreRepository<SharingModuleDbContext, Shar
         return await dbSet
             .IncludeDetails(includeDetails)
             .FirstOrDefaultAsync(x => x.Token == token, GetCancellationToken(cancellationToken));
-    }
-    
-    public virtual async Task<List<ShareLink>> GetListByResourceAsync(
-        ResourceType resourceType,
-        string resourceId,
-        bool includeDetails = false,
-        CancellationToken cancellationToken = default)
-    {
-        var dbSet = await GetDbSetAsync();
-        
-        return await dbSet
-            .IncludeDetails(includeDetails)
-            .Where(x => x.ResourceType == resourceType && x.ResourceId == resourceId)
-            .ToListAsync(GetCancellationToken(cancellationToken));
     }
     
     public virtual async Task<List<ShareLink>> GetActiveListAsync(

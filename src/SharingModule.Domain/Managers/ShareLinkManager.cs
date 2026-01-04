@@ -29,8 +29,6 @@ public class ShareLinkManager : DomainService
     /// Create a new share link with a unique token
     /// </summary>
     public virtual async Task<ShareLink> CreateAsync(
-        ResourceType resourceType,
-        string resourceId,
         ShareLinkType linkType = ShareLinkType.MultipleUse,
         bool isReadOnly = true,
         bool allowComments = false,
@@ -52,8 +50,6 @@ public class ShareLinkManager : DomainService
         var shareLink = new ShareLink(
             GuidGenerator.Create(),
             token,
-            resourceType,
-            resourceId,
             workspaceId,
             linkType,
             isReadOnly,
@@ -102,12 +98,13 @@ public class ShareLinkManager : DomainService
     /// </summary>
     public virtual async Task<ShareLink> RecordAccessAsync(
         ShareLink shareLink,
-        string? accessedBy,
+        string accessedBy,
         bool isAnonymous,
         string? ipAddress = null,
         string? userAgent = null)
     {
         Check.NotNull(shareLink, nameof(shareLink));
+        Check.NotNullOrWhiteSpace(accessedBy, nameof(accessedBy));
 
         // Prevent recording access to a revoked link
         if (shareLink.IsRevoked)

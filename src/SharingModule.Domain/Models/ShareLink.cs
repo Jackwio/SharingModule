@@ -24,16 +24,6 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiWorkspace
     public virtual string Token { get; private set; }
     
     /// <summary>
-    /// The type of resource being shared
-    /// </summary>
-    public virtual ResourceType ResourceType { get; private set; }
-    
-    /// <summary>
-    /// The ID of the resource being shared
-    /// </summary>
-    public virtual string ResourceId { get; private set; }
-    
-    /// <summary>
     /// The type of share link
     /// </summary>
     public virtual ShareLinkType LinkType { get; private set; }
@@ -83,15 +73,12 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiWorkspace
     {
         // For ORM
         Token = string.Empty;
-        ResourceId = string.Empty;
         AccessLogs = new List<ShareLinkAccessLog>();
     }
     
     public ShareLink(
         Guid id,
         [NotNull] string token,
-        ResourceType resourceType,
-        [NotNull] string resourceId,
         Guid workspaceId,
         ShareLinkType linkType = ShareLinkType.MultipleUse,
         bool isReadOnly = true,
@@ -101,8 +88,6 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiWorkspace
     {
         Id = id;
         Token = Check.NotNullOrWhiteSpace(token, nameof(token), ShareLinkConsts.MaxTokenLength);
-        ResourceType = resourceType;
-        ResourceId = Check.NotNullOrWhiteSpace(resourceId, nameof(resourceId), ShareLinkConsts.MaxResourceIdLength);
         WorkspaceId = workspaceId;
         LinkType = linkType;
         IsReadOnly = isReadOnly;

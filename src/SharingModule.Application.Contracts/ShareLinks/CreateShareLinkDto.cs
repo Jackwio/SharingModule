@@ -7,13 +7,6 @@ namespace SharingModule.ShareLinks;
 [Serializable]
 public class CreateShareLinkDto : ExtensibleObject
 {
-    [Required]
-    public ResourceType ResourceType { get; set; }
-    
-    [Required]
-    [StringLength(ShareLinkConsts.MaxResourceIdLength)]
-    public string ResourceId { get; set; } = string.Empty;
-    
     public ShareLinkType LinkType { get; set; } = ShareLinkType.MultipleUse;
     
     public bool IsReadOnly { get; set; } = true;
