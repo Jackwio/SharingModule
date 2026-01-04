@@ -4,7 +4,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace SharingModule.Data;
 
-public class CurrentWorkspace : ICurrentWorkspace, ITransientDependency
+public class CurrentWorkspace : ICurrentWorkspace, IScopedDependency
 {
     private static readonly AsyncLocal<Guid?> _currentWorkspaceId = new AsyncLocal<Guid?>();
 
