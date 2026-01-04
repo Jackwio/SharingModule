@@ -29,6 +29,7 @@ public class ShareLinkManager : DomainService
     /// Create a new share link with a unique token
     /// </summary>
     public virtual async Task<ShareLink> CreateAsync(
+        Guid resourceId,
         ShareLinkType linkType = ShareLinkType.MultipleUse,
         bool isReadOnly = true,
         bool allowComments = false,
@@ -50,6 +51,7 @@ public class ShareLinkManager : DomainService
         var shareLink = new ShareLink(
             GuidGenerator.Create(),
             token,
+            resourceId,
             workspaceId,
             linkType,
             isReadOnly,

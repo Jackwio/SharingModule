@@ -79,6 +79,7 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
     public virtual async Task<ShareLinkWithDetailsDto> CreateAsync(CreateShareLinkDto input)
     {
         var shareLink = await _shareLinkManager.CreateAsync(
+            input.ResourceId,
             input.LinkType,
             input.IsReadOnly,
             input.AllowComments,

@@ -7,6 +7,7 @@ namespace SharingModule.ShareLinks;
 [Serializable]
 public class ShareLinkWithDetailsDto : FullAuditedEntityDto<Guid>
 {
+    public Guid ResourceId { get; set; }
     public string Token { get; set; } = string.Empty;
     public ShareLinkType LinkType { get; set; }
     public bool IsReadOnly { get; set; }
