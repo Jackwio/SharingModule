@@ -12,7 +12,7 @@ namespace SharingModule.Models;
 public interface IShareLinkRepository : IRepository<ShareLink, Guid>
 {
     /// <summary>
-    /// Find a share link by token
+    /// Find a share link by token (ignores workspace filtering)
     /// </summary>
     Task<ShareLink> FindByTokenAsync(
         string token, 

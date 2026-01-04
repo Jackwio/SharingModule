@@ -84,7 +84,7 @@ public class SharingModuleDbContext :
 
         builder.ConfigureSharingModule();
         
-        // Configure workspace filtering
+        // Configure workspace filtering - automatically filters by current workspace
         builder.Entity<ShareLink>().HasQueryFilter(e => e.WorkspaceId == LazyServiceProvider.LazyGetRequiredService<ICurrentWorkspace>().Id);
         builder.Entity<ShareLinkAccessLog>().HasQueryFilter(e => e.WorkspaceId == LazyServiceProvider.LazyGetRequiredService<ICurrentWorkspace>().Id);
     }

@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SharingModule.Models;
-using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -16,14 +15,9 @@ namespace SharingModule.EntityFrameworkCore.Repositories;
 /// </summary>
 public class ShareLinkRepository : EfCoreRepository<SharingModuleDbContext, ShareLink, Guid>, IShareLinkRepository
 {
-    private readonly IDataFilter _dataFilter;
-    
-    public ShareLinkRepository(
-        IDbContextProvider<SharingModuleDbContext> dbContextProvider,
-        IDataFilter dataFilter) 
+    public ShareLinkRepository(IDbContextProvider<SharingModuleDbContext> dbContextProvider) 
         : base(dbContextProvider)
     {
-        _dataFilter = dataFilter;
     }
     
     public virtual async Task<ShareLink> FindByTokenAsync(
@@ -31,14 +25,13 @@ public class ShareLinkRepository : EfCoreRepository<SharingModuleDbContext, Shar
         bool includeDetails = false,
         CancellationToken cancellationToken = default)
     {
-        using (_dataFilter.Disable<IMultiWorkspace>())
-        {
-            var dbSet = await GetDbSetAsync();
-            
-            return await dbSet
-                .IncludeDetails(includeDetails)
-                .FirstOrDefaultAsync(x => x.Token == token, GetCancellationToken(cancellationToken));
-        }
+        var dbSet = await GetDbSetAsync();
+        
+        // IgnoreQueryFilters() 禁用所有已配置的查詢過濾器 (包括 HasQueryFilter)
+        return await dbSet
+            .IgnoreQueryFilters()
+            .IncludeDetails(includeDetails)
+            .FirstOrDefaultAsync(x => x.Token == token, GetCancellationToken(cancellationToken));
     }
     
     public virtual async Task<List<ShareLink>> GetActiveListAsync(
