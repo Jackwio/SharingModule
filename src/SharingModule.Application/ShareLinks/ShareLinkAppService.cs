@@ -23,18 +23,15 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
     private readonly IShareLinkRepository _shareLinkRepository;
     private readonly ShareLinkManager _shareLinkManager;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly SharingModuleApplicationMappers _mappers;
     private readonly IClientIpAddressProvider _clientIpAddressProvider;
     
     public ShareLinkAppService(
         IShareLinkRepository shareLinkRepository,
         ShareLinkManager shareLinkManager,
-        SharingModuleApplicationMappers mappers,
         IClientIpAddressProvider clientIpAddressProvider)
     {
         _shareLinkRepository = shareLinkRepository;
         _shareLinkManager = shareLinkManager;
-        _mappers = mappers;
         _clientIpAddressProvider = clientIpAddressProvider;
     }
     

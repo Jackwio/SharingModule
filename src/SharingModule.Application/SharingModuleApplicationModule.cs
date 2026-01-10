@@ -29,6 +29,9 @@ public class SharingModuleApplicationModule : AbpModule
         // Register HttpContextAccessor
         context.Services.AddHttpContextAccessor();
         
+        // Register client IP provider implementation explicitly
+        context.Services.AddTransient<SharingModule.Services.IClientIpAddressProvider, SharingModule.Application.Services.ClientIpAddressProvider>();
+        
         // Register AutoMapper profile for ABP's AutoMapper integration
         Configure<AbpAutoMapperOptions>(options =>
         {
