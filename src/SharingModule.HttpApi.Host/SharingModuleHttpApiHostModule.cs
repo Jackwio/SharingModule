@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -64,6 +66,7 @@ public class SharingModuleHttpApiHostModule : AbpModule
         var configuration = context.Services.GetConfiguration();
         var hostingEnvironment = context.Services.GetHostingEnvironment();
 
+        ConfigureForwardedHeaders(context, configuration);
         ConfigureAuthentication(context);
         ConfigureBundles();
         ConfigureUrls(configuration);
@@ -71,6 +74,55 @@ public class SharingModuleHttpApiHostModule : AbpModule
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
         ConfigureSwaggerServices(context, configuration);
+    }
+
+    private void ConfigureForwardedHeaders(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        // Register IHttpContextAccessor for accessing HttpContext in services
+        context.Services.AddHttpContextAccessor();
+
+        // Configure ForwardedHeaders middleware to read X-Forwarded-* headers
+        // This is essential for getting real client IP behind reverse proxies, load balancers, and K8s
+        context.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            // Process X-Forwarded-For and X-Forwarded-Proto headers
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+            // Read trusted proxy configuration from appsettings
+            var trustedProxies = configuration.GetSection("ForwardedHeaders:TrustedProxies").Get<string[]>();
+            
+            if (trustedProxies != null && trustedProxies.Length > 0)
+            {
+                // Clear defaults only if specific proxies are configured
+#pragma warning disable ASPDEPR005
+                options.KnownNetworks.Clear();
+#pragma warning restore ASPDEPR005
+                options.KnownProxies.Clear();
+                
+                // Add configured trusted proxies
+                foreach (var proxy in trustedProxies)
+                {
+                    if (IPAddress.TryParse(proxy, out var ipAddress))
+                    {
+                        options.KnownProxies.Add(ipAddress);
+                    }
+                }
+            }
+            else
+            {
+                // For development/local environments without configured proxies,
+                // trust localhost and private networks
+                // WARNING: In production, always configure specific trusted proxies
+#pragma warning disable ASPDEPR005
+                options.KnownNetworks.Clear();
+#pragma warning restore ASPDEPR005
+                options.KnownProxies.Clear();
+                
+                // Add common local/private network proxies for development
+                options.KnownProxies.Add(IPAddress.Loopback); // 127.0.0.1
+                options.KnownProxies.Add(IPAddress.IPv6Loopback); // ::1
+            }
+        });
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
@@ -180,6 +232,10 @@ public class SharingModuleHttpApiHostModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
+
+        // UseForwardedHeaders must be called before other middleware
+        // This processes X-Forwarded-* headers to get real client IP
+        app.UseForwardedHeaders();
 
         if (env.IsDevelopment())
         {
