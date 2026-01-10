@@ -32,6 +32,7 @@ using Volo.Abp.VirtualFileSystem;
 using SharingModule.Middleware;
 using Volo.Abp.BackgroundJobs.Hangfire;
 using Hangfire;
+using Hangfire.PostgreSql;
 using SharingModule.BackgroundJobs;
 
 namespace SharingModule;
@@ -82,7 +83,8 @@ public class SharingModuleHttpApiHostModule : AbpModule
     {
         context.Services.AddHangfire(config =>
         {
-            config.UseSqlServerStorage(configuration.GetConnectionString("Default"));
+            // Use PostgreSQL storage when the Default connection string is a Postgres URI
+            config.UsePostgreSqlStorage(configuration.GetConnectionString("Default"));
         });
     }
 
