@@ -44,9 +44,4 @@ public interface IShareLinkAppService : IApplicationService
     /// Validate a share link token and record access
     /// </summary>
     Task<ShareLinkWithDetailsDto> ValidateAndRecordAccessAsync(ValidateShareLinkDto input);
-    
-    /// <summary>
-    /// Get share links by resource
-    /// </summary>
-    Task<ListResultDto<ShareLinkDto>> GetByResourceAsync(ResourceType resourceType, string resourceId);
 }

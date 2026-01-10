@@ -7,4 +7,7 @@ public static class SharingModuleDomainErrorCodes
     public const string ShareLinkNotFound = "SharingModule:ShareLink:001";
     public const string ShareLinkRevoked = "SharingModule:ShareLink:002";
     public const string ShareLinkExpired = "SharingModule:ShareLink:003";
+    public const string ShareLinkAnonymousNotAllowed = "SharingModule:ShareLink:004";
+    public const string ShareLinkRequiresAuthentication = "SharingModule:ShareLink:005";
+    public const string ShareLinkAlreadyUsed = "SharingModule:ShareLink:006";
 }

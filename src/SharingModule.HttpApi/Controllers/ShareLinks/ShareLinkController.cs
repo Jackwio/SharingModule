@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SharingModule.ShareLinks;
@@ -59,13 +58,5 @@ public class ShareLinkController : SharingModuleController, IShareLinkAppService
     public virtual Task<ShareLinkWithDetailsDto> ValidateAndRecordAccessAsync(ValidateShareLinkDto input)
     {
         return _shareLinkAppService.ValidateAndRecordAccessAsync(input);
-    }
-    
-    [HttpGet("by-resource")]
-    public virtual Task<ListResultDto<ShareLinkDto>> GetByResourceAsync(
-        [FromQuery] ResourceType resourceType, 
-        [FromQuery] [Required] [StringLength(ShareLinkConsts.MaxResourceIdLength)] string resourceId)
-    {
-        return _shareLinkAppService.GetByResourceAsync(resourceType, resourceId);
     }
 }

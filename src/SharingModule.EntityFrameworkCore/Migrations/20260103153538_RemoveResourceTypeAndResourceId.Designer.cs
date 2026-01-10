@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SharingModule.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace SharingModule.Migrations
 {
     [DbContext(typeof(SharingModuleDbContext))]
-    partial class SharingModuleDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260103153538_RemoveResourceTypeAndResourceId")]
+    partial class RemoveResourceTypeAndResourceId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,9 +91,6 @@ namespace SharingModule.Migrations
 
                     b.Property<int>("LinkType")
                         .HasColumnType("integer");
-
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp without time zone");

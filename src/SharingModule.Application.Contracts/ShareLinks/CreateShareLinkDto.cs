@@ -8,11 +8,7 @@ namespace SharingModule.ShareLinks;
 public class CreateShareLinkDto : ExtensibleObject
 {
     [Required]
-    public ResourceType ResourceType { get; set; }
-    
-    [Required]
-    [StringLength(ShareLinkConsts.MaxResourceIdLength)]
-    public string ResourceId { get; set; } = string.Empty;
+    public Guid ResourceId { get; set; }
     
     public ShareLinkType LinkType { get; set; } = ShareLinkType.MultipleUse;
     
@@ -22,5 +18,5 @@ public class CreateShareLinkDto : ExtensibleObject
     
     public bool AllowAnonymous { get; set; } = true;
     
-    public DateTime? ExpiresAt { get; set; }
+    public DateTimeOffset? ExpiresAt { get; set; }
 }

@@ -19,16 +19,12 @@ public static class SharingModuleDbContextModelCreatingExtensions
             b.ConfigureByConvention();
             
             // Properties
+            b.Property(x => x.WorkspaceId)
+                .IsRequired();
+            
             b.Property(x => x.Token)
                 .IsRequired()
                 .HasMaxLength(ShareLinkConsts.MaxTokenLength);
-            
-            b.Property(x => x.ResourceType)
-                .IsRequired();
-            
-            b.Property(x => x.ResourceId)
-                .IsRequired()
-                .HasMaxLength(ShareLinkConsts.MaxResourceIdLength);
             
             b.Property(x => x.LinkType)
                 .IsRequired();
@@ -50,10 +46,10 @@ public static class SharingModuleDbContextModelCreatingExtensions
             b.Property(x => x.RevokedAt);
             
             // Indexes
+            b.HasIndex(x => x.WorkspaceId);
+            
             b.HasIndex(x => x.Token)
                 .IsUnique();
-            
-            b.HasIndex(x => new { x.ResourceType, x.ResourceId });
             
             b.HasIndex(x => x.IsRevoked);
             
@@ -72,6 +68,9 @@ public static class SharingModuleDbContextModelCreatingExtensions
             b.ConfigureByConvention();
             
             // Properties
+            b.Property(x => x.WorkspaceId)
+                .IsRequired();
+                
             b.Property(x => x.ShareLinkId)
                 .IsRequired();
             
@@ -92,6 +91,8 @@ public static class SharingModuleDbContextModelCreatingExtensions
                 .HasMaxLength(ShareLinkConsts.MaxUserAgentLength);
             
             // Indexes
+            b.HasIndex(x => x.WorkspaceId);
+            
             b.HasIndex(x => x.ShareLinkId);
             
             b.HasIndex(x => x.AccessedAt);

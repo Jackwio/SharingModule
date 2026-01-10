@@ -4,16 +4,19 @@ using System.Diagnostics.CodeAnalysis;
 using SharingModule.ShareLinks;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
-using Volo.Abp.MultiTenancy;
+
 
 namespace SharingModule.Models;
 
 /// <summary>
 /// Represents a share link for a resource
 /// </summary>
-public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
+public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiWorkspace
 {
-    public virtual Guid? TenantId { get; protected set; }
+    /// <summary>
+    /// The workspace ID that this entity belongs to
+    /// </summary>
+    public virtual Guid WorkspaceId { get; private set; }
     
     /// <summary>
     /// The unique token for accessing the shared resource
@@ -21,14 +24,9 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual string Token { get; private set; }
     
     /// <summary>
-    /// The type of resource being shared
-    /// </summary>
-    public virtual ResourceType ResourceType { get; private set; }
-    
-    /// <summary>
     /// The ID of the resource being shared
     /// </summary>
-    public virtual string ResourceId { get; private set; }
+    public virtual Guid ResourceId { get; private set; }
     
     /// <summary>
     /// The type of share link
@@ -51,9 +49,9 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual bool AllowAnonymous { get; private set; }
     
     /// <summary>
-    /// The expiration date/time of the share link (null = never expires)
+    /// The expiration date/time of the share link (null = never expires). Uses DateTimeOffset to preserve timezone/offset info.
     /// </summary>
-    public virtual DateTime? ExpiresAt { get; private set; }
+    public virtual DateTimeOffset? ExpiresAt { get; private set; }
     
     /// <summary>
     /// Whether the link has been revoked
@@ -64,6 +62,12 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// When the link was revoked
     /// </summary>
     public virtual DateTime? RevokedAt { get; private set; }
+
+    /// <summary>
+    /// Concurrency token (rowversion) to prevent race conditions on single-use links
+    /// </summary>
+    [System.ComponentModel.DataAnnotations.Timestamp]
+    public virtual byte[]? RowVersion { get; protected set; }
     
     /// <summary>
     /// Access logs for this share link
@@ -74,33 +78,30 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         // For ORM
         Token = string.Empty;
-        ResourceId = string.Empty;
         AccessLogs = new List<ShareLinkAccessLog>();
     }
     
     public ShareLink(
         Guid id,
         [NotNull] string token,
-        ResourceType resourceType,
-        [NotNull] string resourceId,
+        Guid resourceId,
+        Guid workspaceId,
         ShareLinkType linkType = ShareLinkType.MultipleUse,
         bool isReadOnly = true,
         bool allowComments = false,
         bool allowAnonymous = true,
-        DateTime? expiresAt = null,
-        Guid? tenantId = null)
+        DateTimeOffset? expiresAt = null)
     {
         Id = id;
         Token = Check.NotNullOrWhiteSpace(token, nameof(token), ShareLinkConsts.MaxTokenLength);
-        ResourceType = resourceType;
-        ResourceId = Check.NotNullOrWhiteSpace(resourceId, nameof(resourceId), ShareLinkConsts.MaxResourceIdLength);
+        ResourceId = resourceId;
+        WorkspaceId = workspaceId;
         LinkType = linkType;
         IsReadOnly = isReadOnly;
         AllowComments = allowComments;
         AllowAnonymous = allowAnonymous;
         ExpiresAt = expiresAt;
         IsRevoked = false;
-        TenantId = tenantId;
         
         AccessLogs = new List<ShareLinkAccessLog>();
     }
@@ -123,7 +124,7 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
         return this;
     }
     
-    public virtual ShareLink SetExpiresAt(DateTime? expiresAt)
+    public virtual ShareLink SetExpiresAt(DateTimeOffset? expiresAt)
     {
         ExpiresAt = expiresAt;
         return this;
@@ -143,7 +144,7 @@ public class ShareLink : FullAuditedAggregateRoot<Guid>, IMultiTenant
             return false;
         }
         
-        if (ExpiresAt.HasValue && ExpiresAt.Value < DateTime.UtcNow)
+        if (ExpiresAt.HasValue && ExpiresAt.Value < DateTimeOffset.UtcNow)
         {
             return false;
         }

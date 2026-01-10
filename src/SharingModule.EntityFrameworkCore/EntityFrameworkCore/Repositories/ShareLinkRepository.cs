@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SharingModule.Models;
-using SharingModule.ShareLinks;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -16,9 +16,14 @@ namespace SharingModule.EntityFrameworkCore.Repositories;
 /// </summary>
 public class ShareLinkRepository : EfCoreRepository<SharingModuleDbContext, ShareLink, Guid>, IShareLinkRepository
 {
-    public ShareLinkRepository(IDbContextProvider<SharingModuleDbContext> dbContextProvider) 
+    private readonly IDataFilter _dataFilter;
+    
+    public ShareLinkRepository(
+        IDbContextProvider<SharingModuleDbContext> dbContextProvider,
+        IDataFilter dataFilter) 
         : base(dbContextProvider)
     {
+        _dataFilter = dataFilter;
     }
     
     public virtual async Task<ShareLink> FindByTokenAsync(
@@ -26,25 +31,14 @@ public class ShareLinkRepository : EfCoreRepository<SharingModuleDbContext, Shar
         bool includeDetails = false,
         CancellationToken cancellationToken = default)
     {
-        var dbSet = await GetDbSetAsync();
-        
-        return await dbSet
-            .IncludeDetails(includeDetails)
-            .FirstOrDefaultAsync(x => x.Token == token, GetCancellationToken(cancellationToken));
-    }
-    
-    public virtual async Task<List<ShareLink>> GetListByResourceAsync(
-        ResourceType resourceType,
-        string resourceId,
-        bool includeDetails = false,
-        CancellationToken cancellationToken = default)
-    {
-        var dbSet = await GetDbSetAsync();
-        
-        return await dbSet
-            .IncludeDetails(includeDetails)
-            .Where(x => x.ResourceType == resourceType && x.ResourceId == resourceId)
-            .ToListAsync(GetCancellationToken(cancellationToken));
+        using (_dataFilter.Disable<IMultiWorkspace>())
+        {
+            var dbSet = await GetDbSetAsync();
+            
+            return await dbSet
+                .IncludeDetails(includeDetails)
+                .FirstOrDefaultAsync(x => x.Token == token, GetCancellationToken(cancellationToken));
+        }
     }
     
     public virtual async Task<List<ShareLink>> GetActiveListAsync(
@@ -52,7 +46,7 @@ public class ShareLinkRepository : EfCoreRepository<SharingModuleDbContext, Shar
         CancellationToken cancellationToken = default)
     {
         var dbSet = await GetDbSetAsync();
-        var now = DateTime.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         
         return await dbSet
             .IncludeDetails(includeDetails)

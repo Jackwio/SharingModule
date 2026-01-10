@@ -15,6 +15,8 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
 {
     private readonly ShareLinkManager _shareLinkManager;
     private readonly IShareLinkRepository _shareLinkRepository;
+    private readonly Guid _testUserId = Guid.NewGuid();
+    private readonly Guid _testResourceId = Guid.NewGuid();
 
     protected ShareLinkManagerTests()
     {
@@ -27,8 +29,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
     {
         // Act
         var shareLink = await _shareLinkManager.CreateAsync(
-            ResourceType.Page,
-            "test-page-id",
+            _testResourceId,
             ShareLinkType.MultipleUse,
             isReadOnly: true,
             allowComments: false,
@@ -38,8 +39,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
         // Assert
         shareLink.ShouldNotBeNull();
         shareLink.Token.ShouldNotBeNullOrEmpty();
-        shareLink.ResourceType.ShouldBe(ResourceType.Page);
-        shareLink.ResourceId.ShouldBe("test-page-id");
+        shareLink.ResourceId.ShouldBe(_testResourceId);
         shareLink.IsReadOnly.ShouldBeTrue();
         shareLink.AllowComments.ShouldBeFalse();
         shareLink.AllowAnonymous.ShouldBeTrue();
@@ -50,10 +50,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
     public async Task Should_Validate_Valid_ShareLink()
     {
         // Arrange
-        var shareLink = await _shareLinkManager.CreateAsync(
-            ResourceType.Page,
-            "test-page-id"
-        );
+        var shareLink = await _shareLinkManager.CreateAsync(_testResourceId);
 
         // Act
         var validatedLink = await _shareLinkManager.ValidateAndGetAsync(shareLink.Token);
@@ -77,10 +74,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
     public async Task Should_Throw_Exception_For_Revoked_ShareLink()
     {
         // Arrange
-        var shareLink = await _shareLinkManager.CreateAsync(
-            ResourceType.Page,
-            "test-page-id"
-        );
+        var shareLink = await _shareLinkManager.CreateAsync(_testResourceId);
         
         shareLink.Revoke();
         await _shareLinkRepository.UpdateAsync(shareLink);
@@ -97,9 +91,8 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
     {
         // Arrange
         var shareLink = await _shareLinkManager.CreateAsync(
-            ResourceType.Page,
-            "test-page-id",
-            expiresAt: DateTime.UtcNow.AddMinutes(-10) // Already expired
+            _testResourceId,
+            expiresAt: DateTimeOffset.UtcNow.AddMinutes(-10) // Already expired
         );
 
         // Act & Assert
@@ -110,6 +103,24 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
     }
 
     [Fact]
+    public async Task Should_Accept_ExpiresAt_With_Offset()
+    {
+        // Arrange
+        var expiresAt = DateTimeOffset.Now.AddHours(1); // local offset included
+        var shareLink = await _shareLinkManager.CreateAsync(
+            _testResourceId,
+            expiresAt: expiresAt
+        );
+
+        // Act
+        var validated = await _shareLinkManager.ValidateAndGetAsync(shareLink.Token);
+
+        // Assert
+        validated.ShouldNotBeNull();
+        validated.ExpiresAt.ShouldBe(expiresAt);
+    }
+
+    [Fact]
     public async Task Should_Record_Access_To_ShareLink()
     {
         ShareLink? updatedLink = null;
@@ -117,10 +128,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
         await WithUnitOfWorkAsync(async () =>
         {
             // Arrange
-            var shareLink = await _shareLinkManager.CreateAsync(
-                ResourceType.Page,
-                "test-page-id"
-            );
+            var shareLink = await _shareLinkManager.CreateAsync(_testResourceId);
 
             // Act
             await _shareLinkManager.RecordAccessAsync(
@@ -156,8 +164,7 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
         {
             // Arrange
             var shareLink = await _shareLinkManager.CreateAsync(
-                ResourceType.Page,
-                "test-page-id",
+                _testResourceId,
                 ShareLinkType.SingleUse
             );
 
@@ -179,5 +186,47 @@ public abstract class ShareLinkManagerTests<TStartupModule> : SharingModuleDomai
         updatedLink.ShouldNotBeNull();
         updatedLink.IsRevoked.ShouldBeTrue();
         updatedLink.RevokedAt.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task Should_Reject_Anonymous_Access_When_Not_Allowed()
+    {
+        // Arrange
+        var shareLink = await _shareLinkManager.CreateAsync(
+            _testResourceId,
+            allowAnonymous: false
+        );
+
+        // Act & Assert
+        await Should.ThrowAsync<BusinessException>(async () =>
+        {
+            await _shareLinkManager.ValidateAndRecordAccessByTokenAsync(
+                shareLink.Token,
+                currentUserId: null,
+                isAnonymous: true,
+                accessedBy: "anonymous-user"
+            );
+        });
+    }
+
+    [Fact]
+    public async Task Should_Require_Authenticated_User_When_Not_Anonymous()
+    {
+        // Arrange
+        var shareLink = await _shareLinkManager.CreateAsync(
+            _testResourceId,
+            allowAnonymous: false
+        );
+
+        // Act & Assert
+        await Should.ThrowAsync<BusinessException>(async () =>
+        {
+            await _shareLinkManager.ValidateAndRecordAccessByTokenAsync(
+                shareLink.Token,
+                currentUserId: null,
+                isAnonymous: false,
+                accessedBy: "authenticated-user"
+            );
+        });
     }
 }

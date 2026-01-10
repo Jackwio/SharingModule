@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SharingModule.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace SharingModule.Migrations
 {
     [DbContext(typeof(SharingModuleDbContext))]
-    partial class SharingModuleDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251228125515_add_share_link")]
+    partial class add_share_link
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -58,8 +61,8 @@ namespace SharingModule.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("DeletionTime");
 
-                    b.Property<DateTimeOffset?>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -89,24 +92,25 @@ namespace SharingModule.Migrations
                     b.Property<int>("LinkType")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("ResourceId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("ResourceType")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
 
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -115,7 +119,7 @@ namespace SharingModule.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.HasIndex("WorkspaceId");
+                    b.HasIndex("ResourceType", "ResourceId");
 
                     b.ToTable("AppShareLinks", (string)null);
                 });
@@ -143,20 +147,19 @@ namespace SharingModule.Migrations
                     b.Property<Guid>("ShareLinkId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
                     b.Property<string>("UserAgent")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AccessedAt");
 
                     b.HasIndex("ShareLinkId");
-
-                    b.HasIndex("WorkspaceId");
 
                     b.ToTable("AppShareLinkAccessLogs", (string)null);
                 });

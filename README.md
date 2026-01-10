@@ -54,6 +54,21 @@ This is a layered monolith application that consists of the following applicatio
 
 * `SharingModule.DbMigrator`: A console application which applies the migrations and also seeds the initial data. It is useful on development as well as on production environment.
 
+### API Documentation
+
+The SharingModule provides a RESTful API for managing share links. Complete API documentation is available:
+
+* **[API Documentation](API.md)** - Comprehensive guide for frontend/backend integration
+* **[OpenAPI Specification](openapi.json)** - OpenAPI 3.0 specification file for API integration
+* **Swagger UI** - Interactive API documentation available at `https://localhost:44369/swagger` when running the application
+
+The API specification includes:
+- All available endpoints and their parameters
+- Request/response schemas
+- Authentication requirements
+- Base URL configuration
+- Example requests
+
 ### Deploying the application
 
 Deploying an ABP application is not different than deploying any .NET or ASP.NET Core application. However, there are some topics that you should care about when you are deploying your applications. You can check ABP's [Deployment documentation](https://abp.io/docs/latest/deployment) before deploying your application.
