@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using SharingModule.Managers;
 using SharingModule.Models;
 using SharingModule.Permissions;
+using SharingModule.Services;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -22,15 +23,19 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
     private readonly IShareLinkRepository _shareLinkRepository;
     private readonly ShareLinkManager _shareLinkManager;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly SharingModuleApplicationMappers _mappers;
+    private readonly IClientIpAddressProvider _clientIpAddressProvider;
     
     public ShareLinkAppService(
         IShareLinkRepository shareLinkRepository,
         ShareLinkManager shareLinkManager,
-        IHttpContextAccessor httpContextAccessor)
+        SharingModuleApplicationMappers mappers,
+        IClientIpAddressProvider clientIpAddressProvider)
     {
         _shareLinkRepository = shareLinkRepository;
         _shareLinkManager = shareLinkManager;
-        _httpContextAccessor = httpContextAccessor;
+        _mappers = mappers;
+        _clientIpAddressProvider = clientIpAddressProvider;
     }
     
     // [Authorize(SharingModulePermissions.ShareLinks.Default)]
@@ -128,18 +133,29 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
     
     public virtual async Task<ShareLinkWithDetailsDto> ValidateAndRecordAccessAsync(ValidateShareLinkDto input)
     {
-        // Extract real client IP from X-Forwarded-For header
-        var clientIp = GetClientIpAddress();
+        var shareLink = await _shareLinkManager.ValidateAndGetAsync(input.Token);
         
-        // Use a single manager call that validates and records access atomically and enforces non-anonymous rules
-        var shareLink = await _shareLinkManager.ValidateAndRecordAccessByTokenAsync(
-            input.Token,
-            CurrentUser.Id,
+        var accessedBy = input.AccessedBy ?? (input.IsAnonymous ? "Anonymous" : CurrentUser.Id?.ToString() ?? "Unknown");
+        
+        // Automatically capture the real client IP address from HTTP context
+        // This will work correctly behind reverse proxies, load balancers, and in K8s
+        var ipAddress = input.IpAddress ?? _clientIpAddressProvider.GetClientIpAddress();
+        
+        await _shareLinkManager.RecordAccessAsync(
+            shareLink,
+            accessedBy,
             input.IsAnonymous,
-            input.AccessedBy,
-            clientIp ?? input.IpAddress,
-            input.UserAgent
-        );
+            ipAddress);
+
+        // Use a single manager call that validates and records access atomically and enforces non-anonymous rules
+        // var shareLink = await _shareLinkManager.ValidateAndRecordAccessByTokenAsync(
+        //     input.Token,
+        //     CurrentUser.Id,
+        //     input.IsAnonymous,
+        //     input.AccessedBy,
+        //     ipAddress,
+        //     input.UserAgent
+        // );
 
         return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
     }
