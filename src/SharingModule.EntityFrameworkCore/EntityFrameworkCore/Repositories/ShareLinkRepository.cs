@@ -47,6 +47,25 @@ public class ShareLinkRepository : EfCoreRepository<SharingModuleDbContext, Shar
             .ToListAsync(GetCancellationToken(cancellationToken));
     }
     
+    public virtual async Task<int> CleanupInvalidShareLinksAsync(CancellationToken cancellationToken = default)
+    {
+        var dbContext = await GetDbContextAsync();
+        var now = DateTimeOffset.UtcNow;
+        
+        // Delete share links that are:
+        // 1. Revoked
+        // 2. Expired
+        // 3. Single-use and have been used (have access logs)
+        var deletedCount = await dbContext.ShareLinks
+            .Where(x => 
+                x.IsRevoked || 
+                (x.ExpiresAt != null && x.ExpiresAt < now) ||
+                (x.LinkType == ShareLinks.ShareLinkType.SingleUse && x.AccessLogs.Any()))
+            .ExecuteDeleteAsync(GetCancellationToken(cancellationToken));
+        
+        return deletedCount;
+    }
+    
     public override async Task<IQueryable<ShareLink>> WithDetailsAsync()
     {
         return (await GetQueryableAsync()).IncludeDetails();

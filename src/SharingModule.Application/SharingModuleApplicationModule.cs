@@ -26,6 +26,9 @@ public class SharingModuleApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        // Register HttpContextAccessor
+        context.Services.AddHttpContextAccessor();
+        
         // Register AutoMapper profile for ABP's AutoMapper integration
         Configure<AbpAutoMapperOptions>(options =>
         {

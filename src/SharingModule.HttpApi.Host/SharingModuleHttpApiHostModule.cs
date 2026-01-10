@@ -30,6 +30,9 @@ using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using SharingModule.Middleware;
+using Volo.Abp.BackgroundJobs.Hangfire;
+using Hangfire;
+using SharingModule.BackgroundJobs;
 
 namespace SharingModule;
 
@@ -42,7 +45,8 @@ namespace SharingModule;
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpAccountWebOpenIddictModule),
     typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpSwashbuckleModule)
+    typeof(AbpSwashbuckleModule),
+    typeof(AbpBackgroundJobsHangfireModule)
 )]
 public class SharingModuleHttpApiHostModule : AbpModule
 {
@@ -71,6 +75,15 @@ public class SharingModuleHttpApiHostModule : AbpModule
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
         ConfigureSwaggerServices(context, configuration);
+        ConfigureHangfire(context, configuration);
+    }
+
+    private void ConfigureHangfire(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        context.Services.AddHangfire(config =>
+        {
+            config.UseSqlServerStorage(configuration.GetConnectionString("Default"));
+        });
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
@@ -222,5 +235,13 @@ public class SharingModuleHttpApiHostModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
+        
+        app.UseHangfireDashboard();
+        
+        // Schedule recurring job to run daily at 10 PM
+        RecurringJob.AddOrUpdate<ShareLinkCleanupJob>(
+            "ShareLinkCleanup",
+            job => job.ExecuteAsync(new ShareLinkCleanupJobArgs()),
+            "0 22 * * *"); // Cron expression for 10 PM daily
     }
 }

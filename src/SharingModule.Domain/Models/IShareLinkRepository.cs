@@ -25,4 +25,9 @@ public interface IShareLinkRepository : IRepository<ShareLink, Guid>
     Task<List<ShareLink>> GetActiveListAsync(
         bool includeDetails = false,
         CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Clean up invalid share links (revoked, expired, or single-use that have been used)
+    /// </summary>
+    Task<int> CleanupInvalidShareLinksAsync(CancellationToken cancellationToken = default);
 }

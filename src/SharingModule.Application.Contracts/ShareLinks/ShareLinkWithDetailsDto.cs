@@ -17,4 +17,6 @@ public class ShareLinkWithDetailsDto : FullAuditedEntityDto<Guid>
     public bool IsRevoked { get; set; }
     public DateTime? RevokedAt { get; set; }
     public List<ShareLinkAccessLogDto> AccessLogs { get; set; } = new();
+
+    public Guid WorkspaceId { get; private set; }
 }

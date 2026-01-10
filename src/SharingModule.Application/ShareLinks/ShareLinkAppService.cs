@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using SharingModule.Managers;
 using SharingModule.Models;
 using SharingModule.Permissions;
@@ -20,13 +21,16 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
 {
     private readonly IShareLinkRepository _shareLinkRepository;
     private readonly ShareLinkManager _shareLinkManager;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     
     public ShareLinkAppService(
         IShareLinkRepository shareLinkRepository,
-        ShareLinkManager shareLinkManager)
+        ShareLinkManager shareLinkManager,
+        IHttpContextAccessor httpContextAccessor)
     {
         _shareLinkRepository = shareLinkRepository;
         _shareLinkManager = shareLinkManager;
+        _httpContextAccessor = httpContextAccessor;
     }
     
     // [Authorize(SharingModulePermissions.ShareLinks.Default)]
@@ -124,16 +128,44 @@ public class ShareLinkAppService : ApplicationService, IShareLinkAppService
     
     public virtual async Task<ShareLinkWithDetailsDto> ValidateAndRecordAccessAsync(ValidateShareLinkDto input)
     {
+        // Extract real client IP from X-Forwarded-For header
+        var clientIp = GetClientIpAddress();
+        
         // Use a single manager call that validates and records access atomically and enforces non-anonymous rules
         var shareLink = await _shareLinkManager.ValidateAndRecordAccessByTokenAsync(
             input.Token,
             CurrentUser.Id,
             input.IsAnonymous,
             input.AccessedBy,
-            input.IpAddress,
+            clientIp ?? input.IpAddress,
             input.UserAgent
         );
 
         return ObjectMapper.Map<ShareLink, ShareLinkWithDetailsDto>(shareLink);
+    }
+    
+    private string? GetClientIpAddress()
+    {
+        var httpContext = _httpContextAccessor.HttpContext;
+        if (httpContext == null)
+        {
+            return null;
+        }
+        
+        // Check X-Forwarded-For header first (proxy/load balancer scenarios)
+        var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(forwardedFor))
+        {
+            // X-Forwarded-For can contain multiple IPs (client, proxy1, proxy2, ...)
+            // The first one is the original client IP
+            var ips = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            if (ips.Length > 0)
+            {
+                return ips[0].Trim();
+            }
+        }
+        
+        // Fall back to RemoteIpAddress
+        return httpContext.Connection.RemoteIpAddress?.ToString();
     }
 }
